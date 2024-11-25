@@ -1,0 +1,18 @@
+[package]
+name = "mcts"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "mcts"
+path = "src/mcts/lib.rs"
+
+[[bin]]
+name = "ChessExample"
+path = "src/example/main.rs"
+
+[dependencies]
+ordered-float = "4.5.0"
+xorshift = "0.1.3"
+mimalloc = { version = "0.1.39", default-features = false }
+chess = "*"
