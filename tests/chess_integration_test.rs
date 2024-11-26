@@ -6,6 +6,7 @@ use mcts::mcts::MCTSTree;
 use std::fs;
 use chess::{ChessMove, Rank, File, Piece};
 
+// Convert chess action to SAN notation.
 fn action_to_string(game_state: ChessState, action: &ChessMove) -> String {
     let src_piece = match game_state.board.piece_on(action.get_dest()).expect("no piece on dest") {
         Piece::Pawn => "", Piece::Knight => "n", Piece::Bishop => "b", Piece::Rook => "r",
@@ -24,7 +25,7 @@ fn action_to_string(game_state: ChessState, action: &ChessMove) -> String {
 }  
 
 /// Test to see if MCTS finds the optimal moves.
-/// Within a selection of easy chess puzzles.
+/// Within a selection of puzzles.
 #[test]
 fn test_mcts() {
     // Read starting fens and optimal moves from the puzzles_and_solution text file.
@@ -42,7 +43,12 @@ fn test_mcts() {
     }
 
     // Go through each fen and check if the MCTS is optimal
+    let mut wrong = 0;
+    
     for i in 0..contents_split_parts.len() {
+        if contents_split_parts[i][0].chars().nth(0).unwrap() == '#' {
+            continue;
+        }
         print!("\n");
         let mut tree = MCTSTree::<ChessMove, ChessState>::with_capacity(10000000, Some(444), contents_split_parts[i][0].to_string(), 30);
         println!("{}", tree.arena[0].game_state.board);
@@ -66,12 +72,15 @@ fn test_mcts() {
 
         println!("{:?}, {:?}", path, ground_truth);
         if path.len() != ground_truth.len() {
-            panic!();
+            wrong += 1;
         }
         else {
             if path[0..ground_truth.len()] != ground_truth {
-                panic!();
+                wrong += 1;
             }
         }
     }
+    
+    println!("Wrong: {}", wrong);
+    assert!(wrong == 0);
 }

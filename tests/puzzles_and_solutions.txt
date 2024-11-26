@@ -1,5 +1,12 @@
-2rr4/k1p3pp/2Q5/p2q4/5P2/1R5P/PP4P1/6K1 w - - 2 35 : rb7, ka8, qa6
-8/7k/1p3qp1/p1pPp3/P1P1BrpP/1P6/3Q2R1/6K1 b - - 0 33 : rf1, kh2, qh4
-6k1/pppqr1b1/4R1pp/3p4/3P2P1/2P4r/PP2QP2/R5K1 w - - 0 21 : re7, qd6, qe6
-2r3k1/pq3ppp/1pr1p3/3n4/2NP4/PQ2P2P/2R2PP1/2R3K1 w - - 1 24 : nd6, rc2, rc2
-8/8/4p3/4k2p/4P3/3K4/7P/8 w - - 0 38 : ke3, h4, h3
+#: 10 mate in one puzzles. 
+r2q2nr/ppp2Qp1/2nkP2p/3pp3/1b1P1B2/2N5/PPP3PP/R4RK1 w - - 2 2 : nb5
+6k1/R7/6BP/p7/8/2b5/7r/2K5 w - - 1 47 : ra8
+2b5/R7/1k1p2p1/3P3p/1pP4P/1P1p4/1P3r2/2BK4 w - - 7 37 : be3
+r1b1k1nr/1pp2ppp/p1p1q3/4b1B1/4P3/5N2/PPP2PPP/RN1Q1RK1 w kq - 2 9 : qd8
+r4k2/pp1bnpp1/4p3/3pP1NQ/1q6/1Pr5/P4PPP/R4RK1 w - - 4 19 : qf7
+7r/2p2pk1/pb4r1/8/3P1Q2/5PBq/PP3P1P/3R1RK1 b - - 2 26 : qh2
+5rk1/p6r/1p2p1NQ/3q1pPn/P2PbP2/1PP1R2P/5R2/6K1 w - - 1 37 : qf8
+2k1r3/ppBn3p/3pN1pn/1N6/4P3/8/PPP2q1P/2KR2R1 w - - 2 18 : nd6
+7Q/3b1k1p/6qP/8/p3p3/P3B3/3p1P2/3R1K2 b - - 1 45 : bb5
+K1k5/P6p/6p1/3nP3/2N5/6PP/8/8 b - - 0 50 : nc7
+#: 10 mate in two puzzles.
