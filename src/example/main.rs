@@ -1,14 +1,15 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-use chess::{Board, ChessMove};
+
+use chess::{Board, ChessMove, BoardStatus};
 use mcts::mcts::MCTSTree;
-use std::io::stdin;
 use mcts::chess_env::ChessState;
 use std::io;
-use std::io::Write;
+use std::io::{stdin, Write};
 use std::str::FromStr;
 
-// Convert chess piece to cli notation.
+
+/// Returns a symbolized char version of piece.
 fn piece_to_char(piece: chess::Piece) -> char {
     match piece {
         chess::Piece::Pawn => return 'p',
@@ -20,14 +21,25 @@ fn piece_to_char(piece: chess::Piece) -> char {
     }
 }
 
-// Print current board state to cli.
+
+/// Print chess position to stdout.
 fn print_board(board: Board) {
     for i in (0..8).rev() {
         for j in 0..8 {
-            let square: String = char::from_u32(0x61 + j).unwrap().to_string() + &(i + 1).to_string();
-            let color = board.color_on(chess::Square::from_str(&square).unwrap()).unwrap_or(chess::Color::White);
+            // Convert numerical file to alphabetical one by adding the 
+            // unicode `a` and converting back to char. This works becouse
+            // lowercase letters are refferenced sequentially in unicode.
+            let mut square: String = char::from_u32(
+                0x61 + j
+            ).unwrap().to_string();
+            square += &(i + 1).to_string(); // The rank is 1 indexed.
+
+            // If there is no piece, color defaults to white.
+            let color = board.color_on(chess::Square::from_str(&square).unwrap())
+                .unwrap_or(chess::Color::White);
             let piece = board.piece_on(chess::Square::from_str(&square).unwrap());
             if piece.is_some() {
+                // Pint white pieces in uppercase, black pieces in lowercase.
                 if color == chess::Color::White {
                     print!("{} ", piece_to_char(piece.unwrap()).to_uppercase());
                 }
@@ -35,6 +47,7 @@ fn print_board(board: Board) {
                     print!("{} ", piece_to_char(piece.unwrap()));
                 }
             }
+            // Emulates an empty square with no piece on it.
             else {
                 print!("  ");
             }
@@ -44,11 +57,14 @@ fn print_board(board: Board) {
     println!("\n");
 }
 
+
+/// Provides a basic match against the MCTS engine in chess.
+/// User always goes first.
 pub fn main() {
     let runs = 50000;
     let mut game_state = Board::default();
     
-    loop {
+    while game_state.status() == BoardStatus::Ongoing {
         // Get user move in SAN.
         let mut move_text = String::new();
         print!("Enter a SAN move: ");

@@ -6,16 +6,22 @@ use mcts::mcts::MCTSTree;
 use std::fs;
 use chess::{ChessMove, Rank, File, Piece};
 
-// Convert chess action to SAN notation.
+
+/// Converts a chess action to a simplified version of SAN.
+///
+/// Implements the basics of SAN without considering taking,
+/// piece conflics or promotion changes to the basic format.
 fn action_to_string(game_state: ChessState, action: &ChessMove) -> String {
-    let src_piece = match game_state.board.piece_on(action.get_dest()).expect("no piece on dest") {
+    let src_piece = match game_state.board.piece_on(action.get_dest()).unwrap() {
         Piece::Pawn => "", Piece::Knight => "n", Piece::Bishop => "b", Piece::Rook => "r",
         Piece::Queen => "q", Piece::King => "k"
     }.to_string();
+    
     let dest_file = match action.get_dest().get_file() {
         File::A => "a", File::B => "b", File::C => "c", File::D => "d",
         File::E => "e", File::F => "f", File::G => "g", File::H => "h"
     }.to_string();
+    
     let dest_rank = match action.get_dest().get_rank() {
         Rank::First => "1", Rank::Second => "2", Rank::Third => "3", Rank::Fourth => "4",
         Rank::Fifth => "5", Rank::Sixth => "6", Rank::Seventh => "7", Rank::Eighth => "8"
@@ -24,35 +30,63 @@ fn action_to_string(game_state: ChessState, action: &ChessMove) -> String {
     return src_piece + &dest_file + &dest_rank;
 }  
 
-/// Test to see if MCTS finds the optimal moves.
-/// Within a selection of puzzles.
+
+/// Tests the MCTS engine against a selection of chess puzzles.
+///
+/// The puzzles contain decicive win situations or large material
+/// advantages that should be easy to pick up on. The test is only
+/// passed if every puzzle is correctly solved.
+///
+/// The puzzle file is structured with one puzzle per line,
+/// with each line containing the puzzle FEN position and 
+/// comma delimited solution. The FEN string and solution are
+/// delimited by a colon (:).
+///
+/// <div class="warning"> The method passed parsed contents from
+/// the puzzles_and_solutions.txt file to the chess FEN parsing
+/// module. The safety of this parsing from abitrary code execution
+/// is not garunteed. </div>
 #[test]
 fn test_mcts() {
-    // Read starting fens and optimal moves from the puzzles_and_solution text file.
     let runs = 500000;
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").expect("no manifest dir");
-    let contents = fs::read_to_string(manifest_dir.clone() + "/tests/puzzles_and_solutions.txt").expect("read failed");
-    let contents_split: Vec<&str> = contents.split("\n").collect();
-    let mut contents_split_parts: Vec<Vec<&str>> = Vec::new();
-    for line in contents_split {
-        contents_split_parts.push(line.split(":").collect());
-    }
-    for i in 0..contents_split_parts.len() {
-        contents_split_parts[i][0] = contents_split_parts[i][0].trim();
-        contents_split_parts[i][1] = contents_split_parts[i][1].trim();
+
+    // Used as a method to achieve relative pathing to the project root dir.
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").expect("Coult not find project Root.");
+    
+    let contents = fs::read_to_string(
+        manifest_dir.clone() + "/tests/puzzles_and_solutions.txt"
+    ).expect("Coult not read chess puzzles file.");
+    let lines: Vec<&str> = contents.split("\n").collect();
+
+    // Seperates puzzle file lines into position and solution.
+    let mut lines_parts: Vec<Vec<&str>> = Vec::new();
+    for line in lines {
+        // Detection of invalid or comment lines is done by checking if there are two 
+        // components seperated by a colon delimiter. This can lead to inavlid lines 
+        // being detected as valid if the puzzles file is improperly formatted.
+        let line_parts: Vec<&str> = line.split(":").collect();
+        if line_parts.len() == 2 {
+            lines_parts.push(line_parts);
+        }
     }
 
-    // Go through each fen and check if the MCTS is optimal
+    // Trim positions and solutions to protect against whitespaces.
+    for i in 0..lines_parts.len() {
+        lines_parts[i][0] = lines_parts[i][0].trim();
+        lines_parts[i][1] = lines_parts[i][1].trim();
+    }
+
+    // Go through each puzzle and check if the MCTS solution is correct.
     let mut wrong = 0;
-    
-    for i in 0..contents_split_parts.len() {
-        if contents_split_parts[i][0].chars().nth(0).unwrap() == '#' {
-            continue;
-        }
-        print!("\n");
-        let mut tree = MCTSTree::<ChessMove, ChessState>::with_capacity(10000000, Some(444), contents_split_parts[i][0].to_string(), 30);
-        println!("{}", tree.arena[0].game_state.board);
-        // Perform `runs` amount of MCTS
+    for i in 0..lines_parts.len() {
+        let mut tree = MCTSTree::<ChessMove, ChessState>::with_capacity(
+            10000000, // Tree size estimate.
+            None, // Random seed.
+            lines_parts[i][0].to_string(), // Starting position.
+            30 // Children per node estimate.
+        );
+        
+        // Perform `runs` amount of MCTS iterations.
         for _j in 0..runs {
             let select = tree.select(0, None);
             let expand = tree.expand(select);
@@ -60,24 +94,29 @@ fn test_mcts() {
             tree.backpropagate(expand, simulate);
         }
 
-        // optimal path generated by the MCTS, in terms of tree indexes. Ignores exploration by setting exploration factor to 0.
+        // Optimal path generated by the MCTS, in terms of tree indexes. 
+        // Ignores exploration by setting exploration factor to 0.
         let path_raw = tree.trace_path( tree.select(0, Some(0.0))); 
 
-        // path mapped to UCI chess moves.
+        // Path mapped to UCI chess moves.
         let path: Vec<String> = path_raw.into_iter().map(
-            |index| action_to_string(tree.arena[index].game_state.clone(), &tree.arena[index].game_state.last_move.expect("no last move"))
+            |index| action_to_string(
+                tree.arena[index].game_state.clone(), // Get chess position of the node.
+                &tree.arena[index].game_state.last_move
+                    .expect("No last move.") // Get the move that created the node's position.
+            )
         ).collect();
 
-        let ground_truth: Vec<String> = contents_split_parts[i][1].replace(",", "").split(" ").map(|str| str.to_string()).collect();
+        // Read the comma delimited solution.
+        let ground_truth: Vec<String> = lines_parts[i][1]
+            .split(",")
+            .map(|str| str.to_string())
+            .collect();
 
         println!("{:?}, {:?}", path, ground_truth);
-        if path.len() != ground_truth.len() {
+
+        if path != ground_truth {
             wrong += 1;
-        }
-        else {
-            if path[0..ground_truth.len()] != ground_truth {
-                wrong += 1;
-            }
         }
     }
     

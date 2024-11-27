@@ -92,7 +92,10 @@ where
         average_child_count: usize)
     -> Self {
         // Initilize the tree data structures.
+        // Seed is a 128 bit number, or a slice of 2 64 bit ones,
+        // this method expands the 64 bit seed to 128 bit.
         let seed_formatted: &[_] = &[seed.unwrap_or(0), 0];
+        
         let mut tree = Self {
             arena: Vec::with_capacity(arena_capacity), 
             average_child_count: average_child_count,
@@ -126,7 +129,6 @@ where
     /// # Panics
     /// If child_index has no parent, the method will panic on unwrap.
     /// A parent is required as it is part of the UCT algorithm.
-    #[inline(always)]
     pub fn uct(&self, child: usize, exploration_factor: Option<f32>) -> f32 {
         
         let child_obj = &self.arena[child];
@@ -174,7 +176,6 @@ where
     /// * `exploration_factor` : Corresponds to `c` in the UCT algorithm, 
     /// a higher exploration_factor means a preference to exploration over exploitation. 
     /// Sqrt(2) is the theoretical optimum and is the default if unspecified.
-    #[inline(always)]
     pub fn select(&self, mut root: usize, exploration_factor: Option<f32>) -> usize {
         // Leaf node is found where unexpanded children exist.
         while self.arena[root].unexpanded.len() == 0 {
@@ -200,7 +201,6 @@ where
     ///
     /// # Returns
     /// A pointer to the newly expanded node, or `leaf_node` if the leaf node is terminal.
-    #[inline(always)]
     pub fn expand(&mut self, leaf_node: usize) -> usize {
         // Return leaf node if its terminal.
         if self.arena[leaf_node].unexpanded.len() == 0 {
@@ -244,7 +244,6 @@ where
     ///
     /// # Returns
     /// The outcome of the random rollout.
-    #[inline(always)]
     pub fn simulate(&mut self, node: usize) -> GameResult {
         let mut count = 0;
         let mut game_state = self.arena[node].game_state.clone();
@@ -274,7 +273,6 @@ where
     /// * `current_node` : The current node that is being backpropagated.
     ///
     /// * `result` : The result of the simulation that is being backpropagated against.
-    #[inline(always)]
     pub fn backpropagate(&mut self, mut current_node: usize, result: GameResult) {
         loop {
             let current_node_object = &mut self.arena[current_node];
@@ -334,18 +332,14 @@ where
 
 
 
-
-
-
-
-
 /// Unit tests for components of the MCTS tree.
 #[cfg(test)]
 mod tests {
     use super::*;
 
     /// Placeholder game-state which holds only basic internal logic
-    /// it has the neccecary logic for everything except simulation/rollout to function.
+    /// it has the neccecary logic to test everything except for 
+    /// the simulation/rollout function.
     #[derive(Debug, Clone)]
     struct PlaceHolderState {
         last_action_made: u16,
@@ -358,7 +352,10 @@ mod tests {
         }
         
         fn apply_action(&self, action: &u16) -> Self {
-            return PlaceHolderState {last_action_made: *action, depth_counter: self.depth_counter + 1};
+            return PlaceHolderState {
+                last_action_made: *action, 
+                depth_counter: self.depth_counter + 1
+            };
         }
         
         fn status_with_moves_left(&self) -> bool {
@@ -378,62 +375,111 @@ mod tests {
         }
     }
 
-    ///  Generates a sample tree with test MCTS statistics according to the diagram
-    /// in mcts_test_tree.png. Draws are ignored becouse they don't effect internal MCTS logic.
+    /// Generates MCTS sample tree for use during tests.
+    /// Draws are ignored becouse they don't effect internal MCTS logic.
     fn test_generate_example_tree() -> MCTSTree<u16, PlaceHolderState> {
-        let mut tree = MCTSTree::<u16, PlaceHolderState>::with_capacity(100, None, "".to_string(), 10);
+        // Abitrary tree parameters as PlaceHolderState largely ignores them.
+        let mut tree = MCTSTree::<u16, PlaceHolderState>::with_capacity(
+            100, 
+            None, 
+            "".to_string(), 
+            10
+        );
         tree.arena[0].wins = 5;
         tree.arena[0].sims = 12;
         tree.arena[0].expanded = vec![1, 8];
         // Left branch in example tree
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 1}, parent: Some(0), expanded: vec![2, 4, 5], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 1}, 
+            parent: Some(0), 
+            expanded: vec![2, 4, 5], 
+            unexpanded: Vec::new(), 
             wins: 5, draws: 0, sims: 8
         });
         // Left-Left branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, parent: Some(1), expanded: vec![3], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, 
+            parent: Some(1), 
+            expanded: vec![3], 
+            unexpanded: Vec::new(), 
             wins: 1, draws: 0, sims: 2
         });        
         // Left-Left-Mid branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, parent: Some(2), expanded: vec![], unexpanded: vec![10, 11], 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, 
+            parent: Some(2), 
+            expanded: vec![], 
+            unexpanded: vec![10, 11], 
             wins: 1, draws: 0, sims: 1
         });        
         // Left-Mid branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, parent: Some(1), expanded: vec![], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, 
+            parent: Some(1), 
+            expanded: vec![], 
+            unexpanded: Vec::new(), 
             wins: 0, draws: 0, sims: 1
         });     
         // Left-Right branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, parent: Some(1), expanded: vec![6, 7], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, 
+            parent: Some(1), 
+            expanded: vec![6, 7], 
+            unexpanded: Vec::new(), 
             wins: 2, draws: 0, sims: 4
         });     
         // Left-Right-Left branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, parent: Some(5), expanded: vec![], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, 
+            parent: Some(5), 
+            expanded: vec![], 
+            unexpanded: Vec::new(), 
             wins: 0, draws: 0, sims: 1
         });     
         // Left-Right-Right branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, parent: Some(5), expanded: vec![], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, 
+            parent: Some(5), 
+            expanded: vec![], 
+            unexpanded: Vec::new(), 
             wins: 2, draws: 0, sims: 2
         });     
 
         // Right branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 1}, parent: Some(0), expanded: vec![9, 10], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 1}, 
+            parent: Some(0), 
+            expanded: vec![9, 10], 
+            unexpanded: Vec::new(), 
             wins: 2, draws: 0, sims: 4
         });    
         // Right-Left in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, parent: Some(8), expanded: vec![], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, 
+            parent: Some(8), 
+            expanded: vec![], 
+            unexpanded: Vec::new(), 
             wins: 1, draws: 0, sims: 1
         });    
         // Right-Right in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, parent: Some(8), expanded: vec![11], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 2}, 
+            parent: Some(8), 
+            expanded: vec![11], 
+            unexpanded: Vec::new(), 
             wins: 1, draws: 0, sims: 2
         });    
         // Right-Right-Mid branch in example tree.
-        tree.arena.push(MCTSNode {game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, parent: Some(10), expanded: vec![], unexpanded: Vec::new(), 
+        tree.arena.push(MCTSNode {
+            game_state: PlaceHolderState {last_action_made: 0, depth_counter: 3}, 
+            parent: Some(10),
+            expanded: vec![], 
+            unexpanded: Vec::new(), 
             wins: 0, draws: 0, sims: 1
         });    
 
         return tree;
     }
-
 
     /// Running uct on root is invalid. Ensures unwrap on parent panics.
     #[test]
@@ -481,7 +527,8 @@ mod tests {
         let i0 = tree.expand(3);
         let i1 = tree.expand(3);
         let i2 = tree.expand(3);
-        assert!(tree.arena[i0].game_state.last_action_made == 11 || tree.arena[i0].game_state.last_action_made == 10);
+        assert!(tree.arena[i0].game_state.last_action_made == 11 || 
+            tree.arena[i0].game_state.last_action_made == 10);
         if tree.arena[i0].game_state.last_action_made == 11 {
             assert!(tree.arena[i1].game_state.last_action_made == 10);
         }
@@ -493,8 +540,8 @@ mod tests {
         assert!(tree.arena[3].unexpanded.len() == 0);
     }
 
-    /// Tests if the tree backpropagation correctly feeds the simulation result
-    /// to the nodes of the tree.
+    /// Tests if the tree backpropagation correctly feeds 
+    /// the simulation result to the nodes of the tree.
     #[test]
     fn test_backpropagate() {
         let mut tree = test_generate_example_tree();
