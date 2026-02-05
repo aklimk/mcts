@@ -4,6 +4,18 @@ The library can be applied to any game by simply creating a `GameState` trait fo
 Includes an example cross-platform chess `GameState` implementation that can play games and solve puzzles.
 Both the engine and the chess example have unit/integration tests.
 
+# Images 
+<table>
+  <tr>
+    <td valign="top" width="33%">
+      <img src="mcts-chess.png" width="100%">
+    </td>
+    <td valign="top" width="33%">
+      <img src="mcts-tests.png" width="100%">
+    </td>
+  </tr>
+</table>
+
 # Features
 - Core MCTS engine is fully game-agnostic with no domain knowledge and random rollouts.
     Implement the included `GameState` trait and the engine will operate on any game.
