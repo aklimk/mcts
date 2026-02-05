@@ -1,7 +1,8 @@
 # mcts
-Includes a fully featured cross-platform MCTS engine library with random rollouts, with corresponding unit tests. 
+Includes a fully featured cross-platform MCTS engine library with random rollouts. 
 The library can be applied to any game by simply creating a `GameState` trait for a particular game.
-Includes an example cross-platform chess `GameState` implementation unit/integration tests and puzzles to solve.
+Includes an example cross-platform chess `GameState` implementation that can play games and solve puzzles.
+Both the engine and the chess example have unit/integration tests.
 
 # Features
 - Core MCTS engine is fully game-agnostic with no domain knowledge and random rollouts.
