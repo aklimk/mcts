@@ -12,15 +12,10 @@ Both the engine and the chess example have unit/integration tests.
 - Includes fully featured unit and integration tests for both the fundemental library and chess implementation.
     Chess integration tests include a set of puzzles to solve.
 - Uses arena based memory allocation for nodes. Avoids self-referencial node data structures and explicit pointers.
-- MCTS engine uses fast rust memory allocation library as well as fast seed-based random number generation library.
+- MCTS engine uses fast random number generation from xorshift. The chess application uses mialloc for fast memory allocation in the engine.
 - Includes fully function MCTS algorithm with selection, expansion, simulation/rollout and backpropagation.
 - Selection uses the UCT algorithm to deliver a theoretically perfect balance between explotation and exploration, with
     customizable exploration factor.
-  
-## Selection
-## Expansion
-## Rollout
-## Backpropagation
 
 # Building/Running
 The project is packaged as a single rust library crate, with a chess example packaged as an example binary.
